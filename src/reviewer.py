@@ -1,18 +1,9 @@
+import os
 import anthropic
+from github import Github
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# Hardcoded snippet to test — a deliberately bad Python function
-TEST_CODE = """
-def get_user(id):
-    import sqlite3
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    query = "SELECT * FROM users WHERE id = " + id
-    cursor.execute(query)
-    return cursor.fetchone()
-"""
 
 SYSTEM_PROMPT = """You are an expert code reviewer. When given a code snippet, analyze it and provide structured feedback.
 
@@ -35,16 +26,37 @@ One sentence overall assessment.
 Be specific and actionable. Reference line numbers or variable names where possible."""
 
 
+def get_pr_diff(repo_name: str, pr_number: int) -> str:
+    g = Github(os.getenv("GITHUB_TOKEN"))
+    repo = g.get_repo(repo_name)
+    pr = repo.get_pull(pr_number)
+
+    diff_text = ""
+    for file in pr.get_files():
+        if file.filename.endswith((".py", ".js", ".ts", ".java", ".cpp", ".c")):
+            if file.patch:
+                added_lines = []
+                for line in file.patch.split("\n"):
+                    if line.startswith("+") and not line.startswith("+++"):
+                        added_lines.append(line[1:])  # strip the leading +
+
+                if added_lines:
+                    diff_text += f"\n### File: {file.filename}\n"
+                    diff_text += "\n".join(added_lines)
+
+    return diff_text
+
+
 def review_code(code: str) -> str:
     client = anthropic.Anthropic()
 
     message = client.messages.create(
-        model="claude-sonnet-4-5",
+        model="claude-sonnet-4-20250514",
         max_tokens=1024,
         messages=[
             {
                 "role": "user",
-                "content": f"Please review this code:\n\n```python\n{code}\n```"
+                "content": f"Please review this code:\n\n```\n{code}\n```"
             }
         ],
         system=SYSTEM_PROMPT
@@ -54,9 +66,18 @@ def review_code(code: str) -> str:
 
 
 if __name__ == "__main__":
-    print("Sending code to Claude for review...\n")
-    print("=" * 50)
-    review = review_code(TEST_CODE)
-    print(review)
-    print("=" * 50)
-    print("\nSuccess! API is working correctly.")
+    # Test: fetch diff from a real PR
+    REPO = "eshwarikhurd/ai-code-reviewer"
+    PR_NUMBER = 1  # we'll create this PR in a moment
+
+    print(f"Fetching diff from PR #{PR_NUMBER}...")
+    diff = get_pr_diff(REPO, PR_NUMBER)
+
+    if not diff:
+        print("No supported code files found in this PR.")
+    else:
+        print("Diff fetched successfully. Sending to Claude...\n")
+        print("=" * 50)
+        review = review_code(diff)
+        print(review)
+        print("=" * 50)
