@@ -27,7 +27,8 @@ Be specific and actionable. Reference line numbers or variable names where possi
 
 
 def get_pr_diff(repo_name: str, pr_number: int) -> str:
-    g = Github(os.getenv("GITHUB_TOKEN"))
+    from github import Auth
+    g = Github(auth=Auth.Token(os.getenv("GITHUB_TOKEN")))
     repo = g.get_repo(repo_name)
     pr = repo.get_pull(pr_number)
 
