@@ -1,6 +1,9 @@
 # ai-code-reviewer
-LLM-Powered Code Review Bot (GitHub Action) 
-Stack: Python, Anthropic/OpenAI API, GitHub Actions, FastAPI
 
+Automated PR code reviewer powered by Claude (Anthropic). Fetches pull request diffs, sends changed code to Claude for analysis, and posts structured feedback as a GitHub comment — fully automated via GitHub Actions.
 
-A GitHub Action that automatically reviews pull requests — comments on code quality, flags bugs, suggests improvements, and estimates complexity. Fully automated, triggers on every PR.
+## Stack
+- Python
+- Anthropic Claude API
+- PyGithub
+- GitHub Actions
