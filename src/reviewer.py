@@ -73,7 +73,8 @@ def main(pr_number: int):
         raise ValueError("GITHUB_TOKEN environment variable not set")
 
     g = Github(auth=Auth.Token(token))
-    repo = g.get_repo("eshwarikhurd/ai-code-reviewer")
+    repo_name = os.getenv("GITHUB_REPOSITORY", "eshwarikhurd/ai-code-reviewer")
+    repo = g.get_repo(repo_name)
 
     print(f"Fetching diff from PR #{pr_number}...")
     diff = get_pr_diff(repo, pr_number)
