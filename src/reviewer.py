@@ -1,11 +1,17 @@
 import os
+import sys
 import anthropic
-from github import Github
+from github import Github, Auth
 from dotenv import load_dotenv
 
 load_dotenv()
 
-SYSTEM_PROMPT = """You are an expert code reviewer. When given a code snippet, analyze it and provide structured feedback.
+# ── PROMPT VARIANTS ──────────────────────────────────────────────────────────
+# We'll test 4 prompts and compare results. Change ACTIVE_PROMPT to switch.
+
+PROMPT_1_BASIC = """You are a code reviewer. Review the code and list any issues you find."""
+
+PROMPT_2_STRUCTURED = """You are an expert code reviewer. When given a code snippet, analyze it and provide structured feedback.
 
 Format your response exactly like this:
 
@@ -21,13 +27,46 @@ Format your response exactly like this:
 - Minor style or naming issues
 
 ### Summary
-One sentence overall assessment.
+One sentence overall assessment."""
 
-Be specific and actionable. Reference line numbers or variable names where possible."""
+PROMPT_3_SEVERITY = """You are a senior engineer doing a thorough code review. For each issue found, assign a severity:
+
+🔴 CRITICAL — must fix before merge (bugs, security vulnerabilities, data loss risk)
+🟡 SUGGESTION — should fix (performance, readability, best practices)
+🔵 NITPICK — optional (style, naming, minor improvements)
+
+Format your response as:
+
+## Code Review
+
+[severity emoji] **Issue title**
+Problem: what is wrong
+Fix: exactly how to fix it
+
+End with a one-line summary and a MERGE DECISION: ✅ Approve / ⚠️ Approve with changes / ❌ Block."""
+
+PROMPT_4_CONTEXTUAL = """You are a senior engineer reviewing a pull request. Think step by step:
+
+1. First understand what the code is trying to do
+2. Check for correctness — does it do what it intends?
+3. Check for security — SQL injection, input validation, auth issues
+4. Check for reliability — error handling, edge cases, resource leaks
+5. Check for maintainability — naming, complexity, documentation
+
+For each issue found, specify:
+- Severity: CRITICAL / SUGGESTION / NITPICK
+- Location: which function or line
+- Problem: what is wrong and why it matters
+- Fix: the exact corrected code where possible
+
+End with: MERGE DECISION: Approve / Approve with changes / Block — and one sentence why."""
+
+# ── CHANGE THIS TO SWITCH BETWEEN PROMPTS ────────────────────────────────────
+ACTIVE_PROMPT = PROMPT_4_CONTEXTUAL
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 def get_pr_diff(repo_name: str, pr_number: int) -> str:
-    from github import Auth
     g = Github(auth=Auth.Token(os.getenv("GITHUB_TOKEN")))
     repo = g.get_repo(repo_name)
     pr = repo.get_pull(pr_number)
@@ -39,7 +78,7 @@ def get_pr_diff(repo_name: str, pr_number: int) -> str:
                 added_lines = []
                 for line in file.patch.split("\n"):
                     if line.startswith("+") and not line.startswith("+++"):
-                        added_lines.append(line[1:])  # strip the leading +
+                        added_lines.append(line[1:])
 
                 if added_lines:
                     diff_text += f"\n### File: {file.filename}\n"
@@ -48,7 +87,7 @@ def get_pr_diff(repo_name: str, pr_number: int) -> str:
     return diff_text
 
 
-def review_code(code: str) -> str:
+def review_code(code: str, system_prompt: str) -> str:
     client = anthropic.Anthropic()
 
     message = client.messages.create(
@@ -60,16 +99,15 @@ def review_code(code: str) -> str:
                 "content": f"Please review this code:\n\n```\n{code}\n```"
             }
         ],
-        system=SYSTEM_PROMPT
+        system=system_prompt
     )
 
     return message.content[0].text
 
 
 if __name__ == "__main__":
-    # Test: fetch diff from a real PR
     REPO = "eshwarikhurd/ai-code-reviewer"
-    PR_NUMBER = 1  # we'll create this PR in a moment
+    PR_NUMBER = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 
     print(f"Fetching diff from PR #{PR_NUMBER}...")
     diff = get_pr_diff(REPO, PR_NUMBER)
@@ -77,8 +115,8 @@ if __name__ == "__main__":
     if not diff:
         print("No supported code files found in this PR.")
     else:
-        print("Diff fetched successfully. Sending to Claude...\n")
+        print(f"Running with ACTIVE_PROMPT...\n")
         print("=" * 50)
-        review = review_code(diff)
+        review = review_code(diff, ACTIVE_PROMPT)
         print(review)
         print("=" * 50)
