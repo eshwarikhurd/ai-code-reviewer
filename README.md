@@ -20,7 +20,11 @@ as a comment. Zero manual steps.
 ---
 
 ## Example output
+## Example output
 
+![Bot comment with severity-ranked issues](assets/demo-3.png)
+
+![Full review with merge decision](assets/demo-2.png)
 ![Demo](demo.gif)
 ---
 
@@ -68,6 +72,7 @@ The workflow triggers automatically on every pull request.
 ---
 
 ## Project structure
+```
 ai-code-reviewer/
 ├── src/
 │   ├── reviewer.py          # core logic — diff fetch, Claude API, PR comment
@@ -78,6 +83,8 @@ ai-code-reviewer/
 │       └── code-review.yml  # GitHub Actions workflow
 ├── requirements.txt
 └── .env                     # not committed
+
+```
 ---
 
 ## Built by
