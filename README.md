@@ -20,11 +20,11 @@ as a comment. Zero manual steps.
 ---
 
 ## Example output
-
+1. Bot comment with severity-ranked issues
 ![Bot comment with severity-ranked issues](assets/demo-3.png)
-
+2. Full review with merge decision
 ![Full review with merge decision](assets/demo-2.png)
-
+3. Demo
 ![Demo](assets/demo.gif)
 ---
 
