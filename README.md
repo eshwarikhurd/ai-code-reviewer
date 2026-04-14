@@ -20,12 +20,12 @@ as a comment. Zero manual steps.
 ---
 
 ## Example output
-## Example output
 
 ![Bot comment with severity-ranked issues](assets/demo-3.png)
 
 ![Full review with merge decision](assets/demo-2.png)
-![Demo](demo.gif)
+
+![Demo](assets/demo.gif)
 ---
 
 ## Prompt design
@@ -89,4 +89,4 @@ ai-code-reviewer/
 
 ## Built by
 [Eshwari Khurd](https://linkedin.com/in/eshwarikhurd) — MS CS @ UC Irvine  
-Part of a series of solo ML/SDE projects. Next: semantic search engine over document corpora.
+Part of a series of solo ML/SDE projects. 
